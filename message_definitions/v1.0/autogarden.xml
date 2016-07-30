@@ -1,0 +1,61 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<mavlink>
+  <version>1</version>
+  <messages>
+    <!--
+      This group of messages represent  messages that are sent periodically
+      from the sensor unit to the gateway. In a way, they can be view as
+      heartbeat messages to indicate that the sensor unit is still alive. They
+      are only sent one way.
+    -->
+    <message id="0" name="SOIL_VOLUMETRIC_WATER_CONTENT">
+      <description>
+        This message is reported back from the sensor to the central node.
+        It contains the VWC value as reported by the Vegetronix VH400 soil
+        moisture sensor. The analog voltage of the sensor to VWC can be
+        approximated by the following piecewise curve:
+        VWC = m * V - b; m = (VWC1 - VWC2)/(V2 - V1) Where V is voltage, V1 &amp;
+        V2 are voltages recorded at the respective VWC levels of VWC1 &amp;
+        VWC2.  After m is determined the y-axis intercept can be found by
+        inserting one of the end points into the equation b = m * V - VWC.
+        Voltage Range => 0 - 1.1V | VWC = 10 * V - 1
+        Voltage Range => 1.1 - 1.3V | VWC = 25 * V - 17.5
+        Voltage Range => 1.3 - 1.82V | VWC = 48.08 * V - 47.5
+        Voltage Range => 1.82 - 2.2V | VWC = 26.32 * V - 7.89
+      </description>
+      <field type="float" name="vwc">Volumetric Water Content</field>
+    </message>
+    
+    <message id="1" name="SOIL_TEMPERATURE">
+      <description>
+        This message is reported back from the sensor to the central node.
+        It contains the soil temperature as reported by the Vegetronix
+        THERM200 soild temperature probe, which has a temperature
+        range of -40 degrees celcius to 85 degrees celcius with 0.125
+        degrees celcius accuracy and a linearly proporationl voltage output.
+      </description>
+      <field type="float" name="soil_temp">Soil Temperature (degrees C)</field>
+    </message>
+    
+    <message id="2" name="SENSING_UNIT_PACKET">
+      <description>
+        This packet is an aggregate packet that will include both the soild
+        volumetric water content (VWC) and the soil temperature.
+      </description>
+        <field type="float" name="vwc">Volumetric Water Content</field>
+        <field type="float" name="soil_temp">Soil Temperature (degrees C)</field>
+    </message>
+    
+    <!--
+      This group of messages represents commands issued from the gateway to
+      the sensing unit(s).
+    -->
+    <message id="10" name="ACTIVATE_WATER_PUMP">
+      <description>
+        This message is issued from the gateway to the sensing unit to command
+        the water pump on or off.
+      </description>
+      <field type="uint8_t" name="activate">Activate the water pump (True/False)</field>
+    </message>
+  </messages>
+</mavlink>
