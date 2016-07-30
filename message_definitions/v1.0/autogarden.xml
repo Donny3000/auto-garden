@@ -8,7 +8,16 @@
       heartbeat messages to indicate that the sensor unit is still alive. They
       are only sent one way.
     -->
-    <message id="0" name="SOIL_VOLUMETRIC_WATER_CONTENT">
+    <message id="0" name="HEARTBEAT">
+		<description>This message encodes all of the garden sensor data (E.g. Soil Temp/Moisture, Ambient Temp/Humidity, Luminosity)</description>
+		<field type="float" name="soil_temperature">The temperature reading in degrees C from soil temperature sensor.</field>
+		<field type="float" name="soil_vwc">The volumetric water content of the soil.</field>
+		<field type="float" name="ambient_temp">The ambient air temperature in degrees F.</field>
+		<field type="float" name="ambient_humidity">The ambient humidity of the garden.</field>
+		<field type="float" name="luminosity">The amount of lux in the garden.</field>
+	</message>
+	
+    <message id="1" name="SOIL_VOLUMETRIC_WATER_CONTENT">
       <description>
         This message is reported back from the sensor to the central node.
         It contains the VWC value as reported by the Vegetronix VH400 soil
@@ -26,24 +35,15 @@
       <field type="float" name="vwc">Volumetric Water Content</field>
     </message>
     
-    <message id="1" name="SOIL_TEMPERATURE">
+    <message id="2" name="SOIL_TEMPERATURE">
       <description>
         This message is reported back from the sensor to the central node.
         It contains the soil temperature as reported by the Vegetronix
         THERM200 soild temperature probe, which has a temperature
         range of -40 degrees celcius to 85 degrees celcius with 0.125
-        degrees celcius accuracy and a linearly proporationl voltage output.
+        degrees celcius accuracy and a linearly proportional voltage output.
       </description>
       <field type="float" name="soil_temp">Soil Temperature (degrees C)</field>
-    </message>
-    
-    <message id="2" name="SENSING_UNIT_PACKET">
-      <description>
-        This packet is an aggregate packet that will include both the soild
-        volumetric water content (VWC) and the soil temperature.
-      </description>
-        <field type="float" name="vwc">Volumetric Water Content</field>
-        <field type="float" name="soil_temp">Soil Temperature (degrees C)</field>
     </message>
     
     <!--
@@ -56,6 +56,7 @@
         the water pump on or off.
       </description>
       <field type="uint8_t" name="activate">Activate the water pump (True/False)</field>
+      <field type="uint9_t" name="duration">Duration to activate the water pump</field>
     </message>
   </messages>
 </mavlink>
