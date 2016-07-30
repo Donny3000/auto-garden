@@ -46,17 +46,38 @@
       <field type="float" name="soil_temp">Soil Temperature (degrees C)</field>
     </message>
     
+    <message id="3" name="AMBIENT_AIR_TEMPERATURE">
+    	<description>
+    	This message is reporting back the ambient air temperature (degrees C) to the gateway.
+    	</description>
+    	<field type="float" name="ambient_temp">Ambient Air Temperature</field>
+    </message>
+    
+    <message id="4" name="AMBIENT_AIR_HUMIDITY">
+    	<description>
+    		This message is reporting back the ambient air humidity to the gateway.
+    	</description>
+    	<field type="float" name="ambient_humidity">Ambient Air Humidity</field>
+    </message>
+    
+    <message id="5" name="AMBIENT_LUMINOSITY">
+    	<description>
+    		This message is reporting back the ambient light intensity in lux.
+    	</description>
+    	<field type="float" name="ambient_lux">Ambient Light Intensity</field>
+    </message>
+    
     <!--
       This group of messages represents commands issued from the gateway to
       the sensing unit(s).
     -->
-    <message id="10" name="ACTIVATE_WATER_PUMP">
+    <message id="20" name="ACTIVATE_WATER_PUMP">
       <description>
         This message is issued from the gateway to the sensing unit to command
         the water pump on or off.
       </description>
       <field type="uint8_t" name="activate">Activate the water pump (True/False)</field>
-      <field type="uint9_t" name="duration">Duration to activate the water pump</field>
+      <field type="uint8_t" name="duration">Duration to activate the water pump</field>
     </message>
   </messages>
 </mavlink>
