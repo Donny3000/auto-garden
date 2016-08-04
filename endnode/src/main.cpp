@@ -29,8 +29,8 @@
 //******************************************************************************
 //*****IMPORTANT SETTINGS - YOU MUST CHANGE/CONFIGURE TO FIT YOUR HARDWARE *****
 //******************************************************************************
-#define NETWORKID     100  // The same on all nodes that talk to each other
-#define NODEID        1    // The unique identifier of this node
+#define NETWORKID     1  // The same on all nodes that talk to each other
+#define NODEID        0    // The unique identifier of this node
 #define RECEIVER      1    // The recipient of packets
 
 //Match frequency to the hardware version of the radio on your Feather
@@ -54,8 +54,6 @@
 #define RFM69_IRQ     3
 #define RFM69_IRQN    3  // Pin 3 is IRQ 3!
 #define RFM69_RST     4
-
-#define LED           13  // onboard blinky
 
 // Temperature/Humidity sensor defines
 #define DHTPIN        2   // Pin which is connected to the DHT sensor.
@@ -94,7 +92,7 @@ void setupRadio(void)
   delay(100);
 
   // Initialize radio
-  radio.initialize(FREQUENCY,NODEID,NETWORKID);
+  radio.initialize(FREQUENCY, NODEID, NETWORKID);
   if(IS_RFM69HCW)
   {
     radio.setHighPower();    // Only for RFM69HCW & HW!
@@ -103,7 +101,6 @@ void setupRadio(void)
 
   radio.encrypt(ENCRYPTKEY);
 
-  pinMode(LED, OUTPUT);
   Serial.print("\nTransmitting at ");
   Serial.print(FREQUENCY==RF69_433MHZ ? 433 : FREQUENCY==RF69_868MHZ ? 868 : 915);
   Serial.println(" MHz");
@@ -135,6 +132,17 @@ void setupTempHumiditySensor(void)
 }
 //****************************************************************************
 
+void Blink(byte PIN, byte DELAY_MS, byte loops)
+{
+  for (byte i=0; i<loops; i++)
+  {
+    digitalWrite(PIN, HIGH);
+    delay(DELAY_MS);
+    digitalWrite(PIN, LOW);
+    delay(DELAY_MS);
+  }
+}
+
 void setup()
 {
   Serial.begin(SERIAL_BAUD);
@@ -150,26 +158,22 @@ void setup()
 
 void loop()
 {
-  // turn the LED on (HIGH is the voltage level)
-  digitalWrite(LED_BUILTIN, HIGH);
+  delay(1000);  // Wait 1 second between transmits, could also 'sleep' here!
 
-  // wait for a second
-  delay(1000);
+  char radiopacket[20] = "Hello World #";
+  itoa(packetnum++, radiopacket+13, 10);
+  Serial.print("Sending "); Serial.println(radiopacket);
 
-  // turn the LED off by making the voltage LOW
-  digitalWrite(LED_BUILTIN, LOW);
-
-   // wait for a second
-  delay(1000);
-}
-
-void Blink(byte PIN, byte DELAY_MS, byte loops)
-{
-  for (byte i=0; i<loops; i++)
+  // Target node Id, message as string or byte array, message length
+  radio.send(RECEIVER, radiopacket, strlen(radiopacket), false);
+  Serial.print("OK");
+  Blink(LED_BUILTIN, 50, 3);
+  /*if(radio.sendWithRetry(RECEIVER, radiopacket, strlen(radiopacket)))
   {
-    digitalWrite(PIN,HIGH);
-    delay(DELAY_MS);
-    digitalWrite(PIN,LOW);
-    delay(DELAY_MS);
-  }
+    Serial.println("OK");
+    Blink(LED_BUILTIN, 50, 3); //blink LED 3 times, 50ms between blinks
+  }*/
+
+  radio.receiveDone(); // Put radio in RX mode
+  Serial.flush(); // Make sure all serial data is clocked out before sleeping the MCU
 }
