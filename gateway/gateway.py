@@ -8,7 +8,7 @@ Note: this file has been auto-generated. DO NOT EDIT
 
 import struct, array, time, json, os, sys, platform
 
-from ...generator.mavcrc import x25crc
+from generator.mavcrc import x25crc
 import hashlib
 
 WIRE_PROTOCOL_VERSION = '2.0'
