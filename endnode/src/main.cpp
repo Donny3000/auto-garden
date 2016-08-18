@@ -18,6 +18,8 @@
   #define Serial SERIAL_PORT_USBVIRTUAL
 #endif
 
+#include <Vegetronix_VH400.h>
+
 // RFM69 Transiever Interface
 #include <RFM69.h>
 #include <RFM69_ATC.h>
@@ -77,12 +79,21 @@
 #define DHTTYPE       DHT22     // DHT 22 (AM2302)
 //#define DHTTYPE           DHT21     // DHT 21 (AM2301)
 
+//****************************************************************************
+//******************** Objects to hold the data from the sensors *************
+//****************************************************************************
+uint8_t                                 mavlink_buf[MAVLINK_MAX_PACKET_LEN];
+mavlink_message_t                       data_pkt;
+mavlink_activate_water_pump_t           msg_activate_water_pump;
+mavlink_ambient_air_humidity_t          msg_ambient_humidity;
+mavlink_ambient_air_temperature_t       msg_ambient_temp;
+mavlink_ambient_luminosity_t            msg_ambient_luminosity;
+mavlink_soil_temperature_t              msg_soil_temp;
+mavlink_soil_volumetric_water_content_t msg_soil_vwc;
 
 //****************************************************************************
 //************ Instantiate interfaces for the various pieces of hardware *****
 //****************************************************************************
-uint8_t mavlink_buf[MAVLINK_MAX_PACKET_LEN];
-mavlink_message_t data_pkt;
 RFM69 radio = RFM69(RFM69_CS, RFM69_IRQ, IS_RFM69HCW, RFM69_IRQN);
 
 // The address will be different depending on whether you leave
@@ -91,7 +102,20 @@ RFM69 radio = RFM69(RFM69_CS, RFM69_IRQ, IS_RFM69HCW, RFM69_IRQN);
 Adafruit_TSL2561_Unified tsl = Adafruit_TSL2561_Unified(TSL2561_ADDR_FLOAT, 12345);
 
 DHT_Unified dht(DHTPIN, DHTTYPE);
+
+Vegetronix_VH400 vh400(5);
 //****************************************************************************
+
+//****************************************************************************
+//**************** Routines to read samples from the sensors *****************
+//****************************************************************************
+
+//****************************************************************************
+//*************************** ISR for sample timer ***************************
+//****************************************************************************
+void TC3_Handler()
+{
+}
 
 //****************************************************************************
 //************ Setup Routines for the various pieces of hardware *************
@@ -180,9 +204,9 @@ void loop()
 
   // Create and pack the heartbeat data
   mavlink_msg_heartbeat_pack(NODEID, NODEID, &data_pkt, 78.3, 45.1, 83.6, 75.4, 10234);
-  mavlink_msg_to_send_buffer(mavlink_buf, &data_pkt);
+  uint16_t buf_len = mavlink_msg_to_send_buffer(mavlink_buf, &data_pkt);
 
-  radio.send(RECEIVER, data_pkt.payload64, data_pkt.len, false);
+  radio.send(RECEIVER, mavlink_buf, buf_len, false);
   Blink(LED_BUILTIN, 50, 3);
   /*if(radio.sendWithRetry(RECEIVER, radiopacket, strlen(radiopacket)))
   {
