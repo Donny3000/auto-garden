@@ -11,6 +11,12 @@
 #include "Arduino.h"
 #include "Wire.h"
 #include "SPI.h"
+#include "../../lib/include/autogarden/mavlink.h"
+
+#if defined(ARDUINO_SAMD_ZERO) && defined(SERIAL_PORT_USBVIRTUAL)
+  // Required for Serial on Zero based boards
+  #define Serial SERIAL_PORT_USBVIRTUAL
+#endif
 
 // RFM69 Transiever Interface
 #include <RFM69.h>
@@ -29,31 +35,40 @@
 //******************************************************************************
 //*****IMPORTANT SETTINGS - YOU MUST CHANGE/CONFIGURE TO FIT YOUR HARDWARE *****
 //******************************************************************************
-#define NETWORKID     1  // The same on all nodes that talk to each other
-#define NODEID        0    // The unique identifier of this node
-#define RECEIVER      1    // The recipient of packets
+#define NETWORKID     100  // The same on all nodes that talk to each other
+#define NODEID        1    // The unique identifier of this node
+#define RECEIVER      0    // The recipient of packets
 
 //Match frequency to the hardware version of the radio on your Feather
 //#define FREQUENCY     RF69_433MHZ
 //#define FREQUENCY     RF69_868MHZ
 #define FREQUENCY     RF69_915MHZ
-#define ENCRYPTKEY    "autoGardenKey" // Exactly the same 16 characters/bytes on all nodes!
+#define ENCRYPTKEY    "autoGardenKey001" // Exactly the same 16 characters/bytes on all nodes!
 #define IS_RFM69HCW   true // Set to 'true' if you are using an RFM69HCW module
 //******************************************************************************
 #define SERIAL_BAUD   115200
 
-/* for Feather 32u4
-#define RFM69_CS      8
-#define RFM69_IRQ     7
-#define RFM69_IRQN    4  // Pin 7 is IRQ 4!
-#define RFM69_RST     4
-*/
-
+#if defined(ARDUINO_ARCH_SAM) || defined(ARDUINO_ARCH_SAMD)
 /* for Feather M0 */
-#define RFM69_CS      8
-#define RFM69_IRQ     3
-#define RFM69_IRQN    3  // Pin 3 is IRQ 3!
-#define RFM69_RST     4
+  #define RFM69_CS      8
+  #define RFM69_IRQ     3
+  #define RFM69_IRQN    3  // Pin 3 is IRQ 3!
+  #define RFM69_RST     4
+#elif defined(ARDUINO_ARCH_STM32F2)
+/* for Feather 32u4 */
+  #define RFM69_CS      8
+  #define RFM69_IRQ     7
+  #define RFM69_IRQN    4  // Pin 7 is IRQ 4!
+  #define RFM69_RST     4
+#else
+/* for Arduino Uno */
+  #define RFM69_CS      10
+  #define RFM69_IRQ     2
+  #define RFM69_IRQN    0  // Pin 2 is IRQ 0!
+  #define RFM69_RST     9
+#endif
+
+#define LED           13  // onboard blinky
 
 // Temperature/Humidity sensor defines
 #define DHTPIN        2   // Pin which is connected to the DHT sensor.
@@ -66,7 +81,8 @@
 //****************************************************************************
 //************ Instantiate interfaces for the various pieces of hardware *****
 //****************************************************************************
-int16_t packetnum = 0;  // packet counter, we increment per xmission
+uint8_t mavlink_buf[MAVLINK_MAX_PACKET_LEN];
+mavlink_message_t data_pkt;
 RFM69 radio = RFM69(RFM69_CS, RFM69_IRQ, IS_RFM69HCW, RFM69_IRQN);
 
 // The address will be different depending on whether you leave
@@ -82,6 +98,8 @@ DHT_Unified dht(DHTPIN, DHTTYPE);
 //****************************************************************************
 void setupRadio(void)
 {
+  //while (!Serial); // wait until serial console is open, remove if not tethered to computer
+
   Serial.println("Feather RFM69HCW Transmitter");
 
   // Hard Reset the RFM module
@@ -160,13 +178,11 @@ void loop()
 {
   delay(1000);  // Wait 1 second between transmits, could also 'sleep' here!
 
-  char radiopacket[20] = "Hello World #";
-  itoa(packetnum++, radiopacket+13, 10);
-  Serial.print("Sending "); Serial.println(radiopacket);
+  // Create and pack the heartbeat data
+  mavlink_msg_heartbeat_pack(NODEID, NODEID, &data_pkt, 78.3, 45.1, 83.6, 75.4, 10234);
+  mavlink_msg_to_send_buffer(mavlink_buf, &data_pkt);
 
-  // Target node Id, message as string or byte array, message length
-  radio.send(RECEIVER, radiopacket, strlen(radiopacket), false);
-  Serial.print("OK");
+  radio.send(RECEIVER, data_pkt.payload64, data_pkt.len, false);
   Blink(LED_BUILTIN, 50, 3);
   /*if(radio.sendWithRetry(RECEIVER, radiopacket, strlen(radiopacket)))
   {

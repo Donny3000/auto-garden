@@ -49,7 +49,7 @@
 //#define FREQUENCY     RF69_433MHZ
 //#define FREQUENCY     RF69_868MHZ
 #define FREQUENCY     RF69_915MHZ
-#define ENCRYPTKEY    "sampleEncryptKey" //exactly the same 16 characters/bytes on all nodes!
+#define ENCRYPTKEY    "autoGardenKey" //exactly the same 16 characters/bytes on all nodes!
 #define IS_RFM69HCW   true // set to 'true' if you are using an RFM69HCW module
 
 //*********************************************************************************************
@@ -94,7 +94,7 @@ void Blink(byte PIN, byte DELAY_MS, byte loops)
 }
 
 void setup() {
-  while (!Serial); // wait until serial console is open, remove if not tethered to computer
+  //while (!Serial); // wait until serial console is open, remove if not tethered to computer
   Serial.begin(SERIAL_BAUD);
 
   Serial.println("Arduino RFM69HCW Transmitter");
@@ -129,10 +129,14 @@ void loop() {
   itoa(packetnum++, radiopacket+13, 10);
   Serial.print("Sending "); Serial.println(radiopacket);
 
-  if (radio.sendWithRetry(RECEIVER, radiopacket, strlen(radiopacket))) { //target node Id, message as string or byte array, message length
+  radio.send(RECEIVER, radiopacket, strlen(radiopacket));
+  Serial.println("OK");
+  Blink(LED, 50, 3);
+
+  /*if (radio.sendWithRetry(RECEIVER, radiopacket, strlen(radiopacket))) { //target node Id, message as string or byte array, message length
     Serial.println("OK");
     Blink(LED, 50, 3); //blink LED 3 times, 50ms between blinks
-  }
+  }*/
 
   radio.receiveDone(); //put radio in RX mode
   Serial.flush(); //make sure all serial data is clocked out before sleeping the MCU

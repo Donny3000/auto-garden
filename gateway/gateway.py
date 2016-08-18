@@ -182,7 +182,7 @@ class MAVLink_message(object):
         if WIRE_PROTOCOL_VERSION != '1.0' and not force_mavlink1:
             # in MAVLink2 we can strip trailing zeros off payloads. This allows for simple
             # variable length arrays and smaller packets
-            while plen > 0 and payload[plen-1] == chr(0):
+            while plen > 1 and payload[plen-1] == chr(0):
                 plen -= 1
         self._payload = payload[:plen]
         incompat_flags = 0
@@ -215,27 +215,60 @@ enums = {}
 
 # message IDs
 MAVLINK_MSG_ID_BAD_DATA = -1
-MAVLINK_MSG_ID_SOIL_VOLUMETRIC_WATER_CONTENT = 0
-MAVLINK_MSG_ID_SOIL_TEMPERATURE = 1
-MAVLINK_MSG_ID_SENSING_UNIT_PACKET = 2
-MAVLINK_MSG_ID_ACTIVATE_WATER_PUMP = 10
+MAVLINK_MSG_ID_HEARTBEAT = 0
+MAVLINK_MSG_ID_SOIL_VOLUMETRIC_WATER_CONTENT = 1
+MAVLINK_MSG_ID_SOIL_TEMPERATURE = 2
+MAVLINK_MSG_ID_AMBIENT_AIR_TEMPERATURE = 3
+MAVLINK_MSG_ID_AMBIENT_AIR_HUMIDITY = 4
+MAVLINK_MSG_ID_AMBIENT_LUMINOSITY = 5
+MAVLINK_MSG_ID_ACTIVATE_WATER_PUMP = 20
+
+class MAVLink_heartbeat_message(MAVLink_message):
+        '''
+        This message encodes all of the garden sensor data (E.g. Soil
+        Temp/Moisture, Ambient Temp/Humidity, Luminosity)
+        '''
+        id = MAVLINK_MSG_ID_HEARTBEAT
+        name = 'HEARTBEAT'
+        fieldnames = ['soil_temperature', 'soil_vwc', 'ambient_temp', 'ambient_humidity', 'luminosity']
+        ordered_fieldnames = [ 'soil_temperature', 'soil_vwc', 'ambient_temp', 'ambient_humidity', 'luminosity' ]
+        format = '<fffff'
+        native_format = bytearray('<fffff', 'ascii')
+        orders = [0, 1, 2, 3, 4]
+        lengths = [1, 1, 1, 1, 1]
+        array_lengths = [0, 0, 0, 0, 0]
+        crc_extra = 102
+
+        def __init__(self, soil_temperature, soil_vwc, ambient_temp, ambient_humidity, luminosity):
+                MAVLink_message.__init__(self, MAVLink_heartbeat_message.id, MAVLink_heartbeat_message.name)
+                self._fieldnames = MAVLink_heartbeat_message.fieldnames
+                self.soil_temperature = soil_temperature
+                self.soil_vwc = soil_vwc
+                self.ambient_temp = ambient_temp
+                self.ambient_humidity = ambient_humidity
+                self.luminosity = luminosity
+
+        def pack(self, mav, force_mavlink1=False):
+                return MAVLink_message.pack(self, mav, 102, struct.pack('<fffff', self.soil_temperature, self.soil_vwc, self.ambient_temp, self.ambient_humidity, self.luminosity), force_mavlink1=force_mavlink1)
 
 class MAVLink_soil_volumetric_water_content_message(MAVLink_message):
         '''
         This message is reported back from the sensor to the central
-        node.         It contains the VWC value as reported by the
-        Vegetronix VH400 soil         moisture sensor. The analog
-        voltage of the sensor to VWC can be         approximated by
-        the following piecewise curve:         VWC = m * V - b; m =
-        (VWC1 - VWC2)/(V2 - V1) Where V is voltage, V1 &         V2
-        are voltages recorded at the respective VWC levels of VWC1 &
-        VWC2.  After m is determined the y-axis intercept can be found
-        by         inserting one of the end points into the equation b
-        = m * V - VWC.         Voltage Range => 0 - 1.1V | VWC = 10 *
-        V - 1         Voltage Range => 1.1 - 1.3V | VWC = 25 * V -
-        17.5         Voltage Range => 1.3 - 1.82V | VWC = 48.08 * V -
-        47.5         Voltage Range => 1.82 - 2.2V | VWC = 26.32 * V -
-        7.89
+        node.                         It contains the VWC value as
+        reported by the Vegetronix VH400 soil
+        moisture sensor. The analog voltage of the sensor to VWC can
+        be                         approximated by the following
+        piecewise curve:                         VWC = m * V - b; m =
+        (VWC1 - VWC2)/(V2 - V1) Where V is voltage, V1
+        & V2 are voltages recorded at the respective VWC levels of
+        VWC1                         & VWC2.  After m is determined
+        the y-axis intercept can be found                         by
+        inserting one of the end points into the equationb = m * V -
+        VWC.                         Voltage Range => 0 - 1.1V | VWC =
+        10 * V - 1                         Voltage Range => 1.1 - 1.3V
+        | VWC = 25 * V - 17.5                         Voltage Range =>
+        1.3 - 1.82V | VWC = 48.08 * V - 47.5
+        Voltage Range => 1.82 - 2.2V | VWC = 26.32 * V - 7.89
         '''
         id = MAVLINK_MSG_ID_SOIL_VOLUMETRIC_WATER_CONTENT
         name = 'SOIL_VOLUMETRIC_WATER_CONTENT'
@@ -259,11 +292,12 @@ class MAVLink_soil_volumetric_water_content_message(MAVLink_message):
 class MAVLink_soil_temperature_message(MAVLink_message):
         '''
         This message is reported back from the sensor to the central
-        node.         It contains the soil temperature as reported by
-        the Vegetronix         THERM200 soild temperature probe, which
-        has a temperature         range of -40 degrees celcius to 85
-        degrees celcius with 0.125         degrees celcius accuracy
-        and a linearly proporationl voltage output.
+        node.                         It contains the soil temperature
+        as reported by the Vegetronix                         THERM200
+        soild temperature probe, which has a temperature
+        range of -40 degrees celcius to 85 degrees celcius with 0.125
+        degrees celcius accuracy and a linearly proportional voltage
+        output.
         '''
         id = MAVLINK_MSG_ID_SOIL_TEMPERATURE
         name = 'SOIL_TEMPERATURE'
@@ -284,61 +318,111 @@ class MAVLink_soil_temperature_message(MAVLink_message):
         def pack(self, mav, force_mavlink1=False):
                 return MAVLink_message.pack(self, mav, 220, struct.pack('<f', self.soil_temp), force_mavlink1=force_mavlink1)
 
-class MAVLink_sensing_unit_packet_message(MAVLink_message):
+class MAVLink_ambient_air_temperature_message(MAVLink_message):
         '''
-        This packet is an aggregate packet that will include both the
-        soild         volumetric water content (VWC) and the soil
-        temperature.
+        This message is reporting back the ambient air temperature
+        (degrees C) to the gateway.
         '''
-        id = MAVLINK_MSG_ID_SENSING_UNIT_PACKET
-        name = 'SENSING_UNIT_PACKET'
-        fieldnames = ['vwc', 'soil_temp']
-        ordered_fieldnames = [ 'vwc', 'soil_temp' ]
-        format = '<ff'
-        native_format = bytearray('<ff', 'ascii')
-        orders = [0, 1]
-        lengths = [1, 1]
-        array_lengths = [0, 0]
-        crc_extra = 6
+        id = MAVLINK_MSG_ID_AMBIENT_AIR_TEMPERATURE
+        name = 'AMBIENT_AIR_TEMPERATURE'
+        fieldnames = ['ambient_temp']
+        ordered_fieldnames = [ 'ambient_temp' ]
+        format = '<f'
+        native_format = bytearray('<f', 'ascii')
+        orders = [0]
+        lengths = [1]
+        array_lengths = [0]
+        crc_extra = 78
 
-        def __init__(self, vwc, soil_temp):
-                MAVLink_message.__init__(self, MAVLink_sensing_unit_packet_message.id, MAVLink_sensing_unit_packet_message.name)
-                self._fieldnames = MAVLink_sensing_unit_packet_message.fieldnames
-                self.vwc = vwc
-                self.soil_temp = soil_temp
+        def __init__(self, ambient_temp):
+                MAVLink_message.__init__(self, MAVLink_ambient_air_temperature_message.id, MAVLink_ambient_air_temperature_message.name)
+                self._fieldnames = MAVLink_ambient_air_temperature_message.fieldnames
+                self.ambient_temp = ambient_temp
 
         def pack(self, mav, force_mavlink1=False):
-                return MAVLink_message.pack(self, mav, 6, struct.pack('<ff', self.vwc, self.soil_temp), force_mavlink1=force_mavlink1)
+                return MAVLink_message.pack(self, mav, 78, struct.pack('<f', self.ambient_temp), force_mavlink1=force_mavlink1)
+
+class MAVLink_ambient_air_humidity_message(MAVLink_message):
+        '''
+        This message is reporting back the ambient air humidity to the
+        gateway.
+        '''
+        id = MAVLINK_MSG_ID_AMBIENT_AIR_HUMIDITY
+        name = 'AMBIENT_AIR_HUMIDITY'
+        fieldnames = ['ambient_humidity']
+        ordered_fieldnames = [ 'ambient_humidity' ]
+        format = '<f'
+        native_format = bytearray('<f', 'ascii')
+        orders = [0]
+        lengths = [1]
+        array_lengths = [0]
+        crc_extra = 211
+
+        def __init__(self, ambient_humidity):
+                MAVLink_message.__init__(self, MAVLink_ambient_air_humidity_message.id, MAVLink_ambient_air_humidity_message.name)
+                self._fieldnames = MAVLink_ambient_air_humidity_message.fieldnames
+                self.ambient_humidity = ambient_humidity
+
+        def pack(self, mav, force_mavlink1=False):
+                return MAVLink_message.pack(self, mav, 211, struct.pack('<f', self.ambient_humidity), force_mavlink1=force_mavlink1)
+
+class MAVLink_ambient_luminosity_message(MAVLink_message):
+        '''
+        This message is reporting back the ambient light intensity in
+        lux.
+        '''
+        id = MAVLINK_MSG_ID_AMBIENT_LUMINOSITY
+        name = 'AMBIENT_LUMINOSITY'
+        fieldnames = ['ambient_lux']
+        ordered_fieldnames = [ 'ambient_lux' ]
+        format = '<f'
+        native_format = bytearray('<f', 'ascii')
+        orders = [0]
+        lengths = [1]
+        array_lengths = [0]
+        crc_extra = 186
+
+        def __init__(self, ambient_lux):
+                MAVLink_message.__init__(self, MAVLink_ambient_luminosity_message.id, MAVLink_ambient_luminosity_message.name)
+                self._fieldnames = MAVLink_ambient_luminosity_message.fieldnames
+                self.ambient_lux = ambient_lux
+
+        def pack(self, mav, force_mavlink1=False):
+                return MAVLink_message.pack(self, mav, 186, struct.pack('<f', self.ambient_lux), force_mavlink1=force_mavlink1)
 
 class MAVLink_activate_water_pump_message(MAVLink_message):
         '''
         This message is issued from the gateway to the sensing unit to
-        command         the water pump on or off.
+        command                         the water pump on or off.
         '''
         id = MAVLINK_MSG_ID_ACTIVATE_WATER_PUMP
         name = 'ACTIVATE_WATER_PUMP'
-        fieldnames = ['activate']
-        ordered_fieldnames = [ 'activate' ]
-        format = '<B'
-        native_format = bytearray('<B', 'ascii')
-        orders = [0]
-        lengths = [1]
-        array_lengths = [0]
-        crc_extra = 136
+        fieldnames = ['activate', 'duration']
+        ordered_fieldnames = [ 'activate', 'duration' ]
+        format = '<BB'
+        native_format = bytearray('<BB', 'ascii')
+        orders = [0, 1]
+        lengths = [1, 1]
+        array_lengths = [0, 0]
+        crc_extra = 151
 
-        def __init__(self, activate):
+        def __init__(self, activate, duration):
                 MAVLink_message.__init__(self, MAVLink_activate_water_pump_message.id, MAVLink_activate_water_pump_message.name)
                 self._fieldnames = MAVLink_activate_water_pump_message.fieldnames
                 self.activate = activate
+                self.duration = duration
 
         def pack(self, mav, force_mavlink1=False):
-                return MAVLink_message.pack(self, mav, 136, struct.pack('<B', self.activate), force_mavlink1=force_mavlink1)
+                return MAVLink_message.pack(self, mav, 151, struct.pack('<BB', self.activate, self.duration), force_mavlink1=force_mavlink1)
 
 
 mavlink_map = {
+        MAVLINK_MSG_ID_HEARTBEAT : MAVLink_heartbeat_message,
         MAVLINK_MSG_ID_SOIL_VOLUMETRIC_WATER_CONTENT : MAVLink_soil_volumetric_water_content_message,
         MAVLINK_MSG_ID_SOIL_TEMPERATURE : MAVLink_soil_temperature_message,
-        MAVLINK_MSG_ID_SENSING_UNIT_PACKET : MAVLink_sensing_unit_packet_message,
+        MAVLINK_MSG_ID_AMBIENT_AIR_TEMPERATURE : MAVLink_ambient_air_temperature_message,
+        MAVLINK_MSG_ID_AMBIENT_AIR_HUMIDITY : MAVLink_ambient_air_humidity_message,
+        MAVLINK_MSG_ID_AMBIENT_LUMINOSITY : MAVLink_ambient_luminosity_message,
         MAVLINK_MSG_ID_ACTIVATE_WATER_PUMP : MAVLink_activate_water_pump_message,
 }
 
@@ -729,22 +813,50 @@ class MAVLink(object):
                 m._crc = crc
                 m._header = MAVLink_header(msgId, incompat_flags, compat_flags, mlen, seq, srcSystem, srcComponent)
                 return m
+        def heartbeat_encode(self, soil_temperature, soil_vwc, ambient_temp, ambient_humidity, luminosity):
+                '''
+                This message encodes all of the garden sensor data (E.g. Soil
+                Temp/Moisture, Ambient Temp/Humidity, Luminosity)
+
+                soil_temperature          : The temperature reading in degrees C from soil temperature sensor. (float)
+                soil_vwc                  : The volumetric water content of the soil. (float)
+                ambient_temp              : The ambient air temperature in degrees F. (float)
+                ambient_humidity          : The ambient humidity of the garden. (float)
+                luminosity                : The amount of lux in the garden. (float)
+
+                '''
+                return MAVLink_heartbeat_message(soil_temperature, soil_vwc, ambient_temp, ambient_humidity, luminosity)
+
+        def heartbeat_send(self, soil_temperature, soil_vwc, ambient_temp, ambient_humidity, luminosity, force_mavlink1=False):
+                '''
+                This message encodes all of the garden sensor data (E.g. Soil
+                Temp/Moisture, Ambient Temp/Humidity, Luminosity)
+
+                soil_temperature          : The temperature reading in degrees C from soil temperature sensor. (float)
+                soil_vwc                  : The volumetric water content of the soil. (float)
+                ambient_temp              : The ambient air temperature in degrees F. (float)
+                ambient_humidity          : The ambient humidity of the garden. (float)
+                luminosity                : The amount of lux in the garden. (float)
+
+                '''
+                return self.send(self.heartbeat_encode(soil_temperature, soil_vwc, ambient_temp, ambient_humidity, luminosity), force_mavlink1=force_mavlink1)
+
         def soil_volumetric_water_content_encode(self, vwc):
                 '''
                 This message is reported back from the sensor to the central node.
                 It contains the VWC value as reported by the
-                Vegetronix VH400 soil         moisture sensor. The
-                analog voltage of the sensor to VWC can be
+                Vegetronix VH400 soil                         moisture
+                sensor. The analog voltage of the sensor to VWC can be
                 approximated by the following piecewise curve:
                 VWC = m * V - b; m = (VWC1 - VWC2)/(V2 - V1) Where V
-                is voltage, V1 &         V2 are voltages recorded at
-                the respective VWC levels of VWC1 &         VWC2.
-                After m is determined the y-axis intercept can be
-                found by         inserting one of the end points into
-                the equation b = m * V - VWC.         Voltage Range =>
-                0 - 1.1V | VWC = 10 * V - 1         Voltage Range =>
-                1.1 - 1.3V | VWC = 25 * V - 17.5         Voltage Range
-                => 1.3 - 1.82V | VWC = 48.08 * V - 47.5
+                is voltage, V1                         & V2 are
+                voltages recorded at the respective VWC levels of VWC1
+                & VWC2.  After m is determined the y-axis intercept
+                can be found                         by inserting one
+                of the end points into the equationb = m * V - VWC.
+                Voltage Range => 0 - 1.1V | VWC = 10 * V - 1
+                Voltage Range => 1.1 - 1.3V | VWC = 25 * V - 17.5
+                Voltage Range => 1.3 - 1.82V | VWC = 48.08 * V - 47.5
                 Voltage Range => 1.82 - 2.2V | VWC = 26.32 * V - 7.89
 
                 vwc                       : Volumetric Water Content (float)
@@ -756,18 +868,18 @@ class MAVLink(object):
                 '''
                 This message is reported back from the sensor to the central node.
                 It contains the VWC value as reported by the
-                Vegetronix VH400 soil         moisture sensor. The
-                analog voltage of the sensor to VWC can be
+                Vegetronix VH400 soil                         moisture
+                sensor. The analog voltage of the sensor to VWC can be
                 approximated by the following piecewise curve:
                 VWC = m * V - b; m = (VWC1 - VWC2)/(V2 - V1) Where V
-                is voltage, V1 &         V2 are voltages recorded at
-                the respective VWC levels of VWC1 &         VWC2.
-                After m is determined the y-axis intercept can be
-                found by         inserting one of the end points into
-                the equation b = m * V - VWC.         Voltage Range =>
-                0 - 1.1V | VWC = 10 * V - 1         Voltage Range =>
-                1.1 - 1.3V | VWC = 25 * V - 17.5         Voltage Range
-                => 1.3 - 1.82V | VWC = 48.08 * V - 47.5
+                is voltage, V1                         & V2 are
+                voltages recorded at the respective VWC levels of VWC1
+                & VWC2.  After m is determined the y-axis intercept
+                can be found                         by inserting one
+                of the end points into the equationb = m * V - VWC.
+                Voltage Range => 0 - 1.1V | VWC = 10 * V - 1
+                Voltage Range => 1.1 - 1.3V | VWC = 25 * V - 17.5
+                Voltage Range => 1.3 - 1.82V | VWC = 48.08 * V - 47.5
                 Voltage Range => 1.82 - 2.2V | VWC = 26.32 * V - 7.89
 
                 vwc                       : Volumetric Water Content (float)
@@ -779,11 +891,11 @@ class MAVLink(object):
                 '''
                 This message is reported back from the sensor to the central node.
                 It contains the soil temperature as reported by the
-                Vegetronix         THERM200 soild temperature probe,
-                which has a temperature         range of -40 degrees
-                celcius to 85 degrees celcius with 0.125
-                degrees celcius accuracy and a linearly proporationl
-                voltage output.
+                Vegetronix                         THERM200 soild
+                temperature probe, which has a temperature
+                range of -40 degrees celcius to 85 degrees celcius
+                with 0.125                         degrees celcius
+                accuracy and a linearly proportional voltage output.
 
                 soil_temp                 : Soil Temperature (degrees C) (float)
 
@@ -794,58 +906,94 @@ class MAVLink(object):
                 '''
                 This message is reported back from the sensor to the central node.
                 It contains the soil temperature as reported by the
-                Vegetronix         THERM200 soild temperature probe,
-                which has a temperature         range of -40 degrees
-                celcius to 85 degrees celcius with 0.125
-                degrees celcius accuracy and a linearly proporationl
-                voltage output.
+                Vegetronix                         THERM200 soild
+                temperature probe, which has a temperature
+                range of -40 degrees celcius to 85 degrees celcius
+                with 0.125                         degrees celcius
+                accuracy and a linearly proportional voltage output.
 
                 soil_temp                 : Soil Temperature (degrees C) (float)
 
                 '''
                 return self.send(self.soil_temperature_encode(soil_temp), force_mavlink1=force_mavlink1)
 
-        def sensing_unit_packet_encode(self, vwc, soil_temp):
+        def ambient_air_temperature_encode(self, ambient_temp):
                 '''
-                This packet is an aggregate packet that will include both the soild
-                volumetric water content (VWC) and the soil
-                temperature.
+                This message is reporting back the ambient air temperature (degrees C)
+                to the gateway.
 
-                vwc                       : Volumetric Water Content (float)
-                soil_temp                 : Soil Temperature (degrees C) (float)
+                ambient_temp              : Ambient Air Temperature (float)
 
                 '''
-                return MAVLink_sensing_unit_packet_message(vwc, soil_temp)
+                return MAVLink_ambient_air_temperature_message(ambient_temp)
 
-        def sensing_unit_packet_send(self, vwc, soil_temp, force_mavlink1=False):
+        def ambient_air_temperature_send(self, ambient_temp, force_mavlink1=False):
                 '''
-                This packet is an aggregate packet that will include both the soild
-                volumetric water content (VWC) and the soil
-                temperature.
+                This message is reporting back the ambient air temperature (degrees C)
+                to the gateway.
 
-                vwc                       : Volumetric Water Content (float)
-                soil_temp                 : Soil Temperature (degrees C) (float)
+                ambient_temp              : Ambient Air Temperature (float)
 
                 '''
-                return self.send(self.sensing_unit_packet_encode(vwc, soil_temp), force_mavlink1=force_mavlink1)
+                return self.send(self.ambient_air_temperature_encode(ambient_temp), force_mavlink1=force_mavlink1)
 
-        def activate_water_pump_encode(self, activate):
+        def ambient_air_humidity_encode(self, ambient_humidity):
+                '''
+                This message is reporting back the ambient air humidity to the
+                gateway.
+
+                ambient_humidity          : Ambient Air Humidity (float)
+
+                '''
+                return MAVLink_ambient_air_humidity_message(ambient_humidity)
+
+        def ambient_air_humidity_send(self, ambient_humidity, force_mavlink1=False):
+                '''
+                This message is reporting back the ambient air humidity to the
+                gateway.
+
+                ambient_humidity          : Ambient Air Humidity (float)
+
+                '''
+                return self.send(self.ambient_air_humidity_encode(ambient_humidity), force_mavlink1=force_mavlink1)
+
+        def ambient_luminosity_encode(self, ambient_lux):
+                '''
+                This message is reporting back the ambient light intensity in lux.
+
+                ambient_lux               : Ambient Light Intensity (float)
+
+                '''
+                return MAVLink_ambient_luminosity_message(ambient_lux)
+
+        def ambient_luminosity_send(self, ambient_lux, force_mavlink1=False):
+                '''
+                This message is reporting back the ambient light intensity in lux.
+
+                ambient_lux               : Ambient Light Intensity (float)
+
+                '''
+                return self.send(self.ambient_luminosity_encode(ambient_lux), force_mavlink1=force_mavlink1)
+
+        def activate_water_pump_encode(self, activate, duration):
                 '''
                 This message is issued from the gateway to the sensing unit to command
                 the water pump on or off.
 
                 activate                  : Activate the water pump (True/False) (uint8_t)
+                duration                  : Duration to activate the water pump (uint8_t)
 
                 '''
-                return MAVLink_activate_water_pump_message(activate)
+                return MAVLink_activate_water_pump_message(activate, duration)
 
-        def activate_water_pump_send(self, activate, force_mavlink1=False):
+        def activate_water_pump_send(self, activate, duration, force_mavlink1=False):
                 '''
                 This message is issued from the gateway to the sensing unit to command
                 the water pump on or off.
 
                 activate                  : Activate the water pump (True/False) (uint8_t)
+                duration                  : Duration to activate the water pump (uint8_t)
 
                 '''
-                return self.send(self.activate_water_pump_encode(activate), force_mavlink1=force_mavlink1)
+                return self.send(self.activate_water_pump_encode(activate, duration), force_mavlink1=force_mavlink1)
 
