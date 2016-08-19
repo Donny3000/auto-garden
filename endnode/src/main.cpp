@@ -19,6 +19,7 @@
 #endif
 
 #include <Vegetronix_VH400.h>
+#include <Vegetronix_THERM200.h>
 
 // RFM69 Transiever Interface
 #include <RFM69.h>
@@ -103,7 +104,8 @@ Adafruit_TSL2561_Unified tsl = Adafruit_TSL2561_Unified(TSL2561_ADDR_FLOAT, 1234
 
 DHT_Unified dht(DHTPIN, DHTTYPE);
 
-Vegetronix_VH400 vh400(5);
+vegetronix::Vegetronix_VH400 vh400(A0);
+vegetronix::Vegetronix_THERM200 therm200(A1);
 //****************************************************************************
 
 //****************************************************************************

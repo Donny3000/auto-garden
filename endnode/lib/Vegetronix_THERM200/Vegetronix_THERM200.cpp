@@ -1,51 +1,33 @@
-#include "Vegetronix_VH400.h"
+#include "Vegetronix_THERM200.h"
 
 namespace vegetronix
 {
-  Vegetronix_VH400::Vegetronix_VH400(uint8_t pin, uint8_t res) :
+  Vegetronix_THERM200::Vegetronix_THERM200(uint8_t pin, uint8_t res) :
     pin_(pin), res_(res)
   {
     pinMode(pin_, INPUT);
     analogReadResolution(res_);
   }
 
-  float Vegetronix_VH400::readSensor()
+  float Vegetronix_THERM200::readSensor()
   {
     uint16_t value = analogRead(pin_);
     float sensorVoltage = value * (REF_VOLTAGE / ADC_RESOLUTION_VALUE);
-    float vwc;
 
-    // Calculate vwc
-    if(sensorVoltage <= 1.1)
-    {
-      vwc = 10 * sensorVoltage - 1;
-    }
-    else if(sensorVoltage > 1.1 && sensorVoltage <= 1.3)
-    {
-      vwc = 25 * sensorVoltage - 17.5;
-    }
-    else if(sensorVoltage > 1.3 && sensorVoltage <= 1.82)
-    {
-      vwc = 48.08 * sensorVoltage - 47.5;
-    }
-    else if(sensorVoltage > 1.82)
-    {
-      vwc = 26.32 * sensorVoltage - 7.89;
-    }
-    return (vwc);
+    return ((sensorVoltage * 41.67) - 40.0);
   }
 
-  void Vegetronix_VH400::readSensorWithStats(vegetronix_vh400_data_t &data)
+  void Vegetronix_THERM200::readSensorWithStats(vegetronix_therm200_data_t &data)
   {
     // Sums for calculating statistics
     uint32_t sensorDNsum = 0;
     uint32_t sensorDN;
     float sensorVoltageSum = 0.0;
-    float sensorVWCSum = 0.0;
+    float sensorTempSum = 0.0;
     float sqDevSum_DN = 0.0;
     float sqDevSum_volts = 0.0;
-    float sqDevSum_VWC = 0.0;
-    float sensorVoltage, vwc;
+    float sqDevSum_Temp = 0.0;
+    float sensorVoltage, temp;
 
     // Make measurements and add to arrays
     for(uint32_t i = 0; i < NUMBER_OF_MEASUREMENTS; i++)
@@ -53,27 +35,17 @@ namespace vegetronix
       // Read value and convert to voltage
       sensorDN = analogRead(pin_);
       sensorVoltage = sensorDN * (REF_VOLTAGE / ADC_RESOLUTION_VALUE);
-
-      // Calculate VWC
-      if(sensorVoltage <= 1.1) {
-        vwc = 10 * sensorVoltage - 1;
-      } else if(sensorVoltage > 1.1 && sensorVoltage <= 1.3) {
-        vwc = 25 * sensorVoltage - 17.5;
-      } else if(sensorVoltage > 1.3 && sensorVoltage <= 1.82) {
-        vwc = 48.08 * sensorVoltage - 47.5;
-      } else if(sensorVoltage > 1.82) {
-        vwc = 26.32 * sensorVoltage - 7.89;
-      }
+      temp = (sensorVoltage * 41.67) - 40.0;
 
       // Add to statistics sums
       sensorDNsum += sensorDN;
       sensorVoltageSum += sensorVoltage;
-      sensorVWCSum += vwc;
+      sensorTempSum += temp;
 
       // Add to arrays
       sensorDNs_[i] = sensorDN;
       sensorVoltages_[i] = sensorVoltage;
-      sensorVWCs_[i] = vwc;
+      sensorTemps_[i] = temp;
 
       // Wait for next measurement
       delay(DELAY_BETWEEN_MEASUREMENTS);
@@ -82,26 +54,26 @@ namespace vegetronix
     // Calculate means
     float DN_mean = float(sensorDNsum) / float(NUMBER_OF_MEASUREMENTS);
     float volts_mean = sensorVoltageSum / float(NUMBER_OF_MEASUREMENTS);
-    float VWC_mean = sensorVWCSum / float(NUMBER_OF_MEASUREMENTS);
+    float temp_mean = sensorTempSum / float(NUMBER_OF_MEASUREMENTS);
 
     // Loop back through to calculate SD
     for(uint32_t i = 0; i < NUMBER_OF_MEASUREMENTS; i++)
     {
       sqDevSum_DN += pow((DN_mean - float(sensorDNs_[i])), 2);
       sqDevSum_volts += pow((volts_mean - float(sensorVoltages_[i])), 2);
-      sqDevSum_VWC += pow((VWC_mean - float(sensorVWCs_[i])), 2);
+      sqDevSum_Temp += pow((temp_mean - float(sensorTemps_[i])), 2);
     }
-    
+
     float DN_stDev = sqrt(sqDevSum_DN / float(NUMBER_OF_MEASUREMENTS));
     float volts_stDev = sqrt(sqDevSum_volts / float(NUMBER_OF_MEASUREMENTS));
-    float VWC_stDev = sqrt(sqDevSum_VWC / float(NUMBER_OF_MEASUREMENTS));
+    float temp_stDev = sqrt(sqDevSum_Temp / float(NUMBER_OF_MEASUREMENTS));
 
     // Setup the output struct
     data.analogValue = DN_mean;
     data.analogValue_sd = DN_stDev;
     data.voltage = volts_mean;
     data.voltage_sd = volts_stDev;
-    data.vwc = VWC_mean;
-    data.vwc_sd = VWC_stDev;
+    data.temp = temp_mean;
+    data.temp_sd = temp_stDev;
   }
 }
