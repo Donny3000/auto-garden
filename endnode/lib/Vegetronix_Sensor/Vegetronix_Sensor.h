@@ -47,6 +47,9 @@ namespace vegetronix_sensor
     // - data: Reference to a Vegetronix sensor data structure.
     // - numOfSamples: Number of samples of data to collect for basic statistical analysis
     // - delayBtwnSamples: How long to wait between samples in milli-seconds
+    // lx-88 of Github had a good idea to implement statistics on the device:
+    // https://gist.github.com/lx-88/413b48ced6b79300ea76
+    // I decieded to do a similar thing here.
     virtual void readSensorWithStats(vegetronix_sensor_data_t& data) {};
   };
 }
