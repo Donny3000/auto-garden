@@ -7,40 +7,20 @@
 #ifndef VEGETRONIX_VH400_H
 #define VEGETRONIX_VH400_H
 
-#include <Arduino.h>
+#include <Vegetronix_Sensor.h>
 
-#if defined(ARDUINO_ARCH_SAM) || defined(ARDUINO_ARCH_SAMD)
-#define REF_VOLTAGE          3.3
-#define ADC_RESOLUTION_VALUE 4095
-#else
-#define REF_VOLTAGE          5.0
-#define ADC_RESOLUTION_VALUE 1023
-#endif
-
-#define NUMBER_OF_MEASUREMENTS 100
-#define DELAY_BETWEEN_MEASUREMENTS 1
-
-namespace vegetronix
+namespace vegetronix_sensor
 {
-  typedef struct vegetronix_vh400_data {
-    float analogValue;
-    float analogValue_sd;
-    float voltage;
-    float voltage_sd;
-    float vwc;
-    float vwc_sd;
-  } vegetronix_vh400_data_t;
-
-  class Vegetronix_VH400
+  class Vegetronix_VH400 : public VegetronixSensor
   {
   public:
-    Vegetronix_VH400(uint8_t pin, uint8_t res = ADC_RESOLUTION);
+    Vegetronix_VH400(uint8_t pin);
 
     // This function returns Volumetric Water Content by converting the analogPin
     // value to voltage and then converting voltage to VWC using the piecewise
     // regressions provided by the manufacturer
     // at http://www.vegetronix.com/Products/VH400/VH400-Piecewise-Curve.phtml
-    float readSensor(void);
+    void readSensor(vegetronix_sensor_data_t& data);
 
     // This variant calculates the mean and standard deviation of 100 measurements
     // over 5 seconds.
@@ -49,11 +29,10 @@ namespace vegetronix
     // pin value to voltage and then converting voltage to VWC using the piecewise
     // regressions provided by the manufacturer
     // at http://www.vegetronix.com/Products/VH400/VH400-Piecewise-Curve.phtml
-    void readSensorWithStats(vegetronix_vh400_data_t& data);
+    void readSensorWithStats(vegetronix_sensor_data_t& data);
 
   private:
     uint8_t pin_;
-    uint8_t res_;
 
     // Arrays to hold multiple measurements
     uint32_t sensorDNs_[NUMBER_OF_MEASUREMENTS];

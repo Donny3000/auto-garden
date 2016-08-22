@@ -1,21 +1,23 @@
 #include "Vegetronix_VH400.h"
 
-namespace vegetronix
+namespace vegetronix_sensor
 {
-  Vegetronix_VH400::Vegetronix_VH400(uint8_t pin, uint8_t res) :
-    pin_(pin), res_(res)
+  Vegetronix_VH400::Vegetronix_VH400(uint8_t pin) :
+  VegetronixSensor(), pin_(pin)
   {
     pinMode(pin_, INPUT);
-    analogReadResolution(res_);
   }
 
-  float Vegetronix_VH400::readSensor()
+  void Vegetronix_VH400::readSensor(vegetronix_sensor_data_t& data)
   {
     uint16_t value = analogRead(pin_);
+    data.analogValue = value * 1.0;
+
     float sensorVoltage = value * (REF_VOLTAGE / ADC_RESOLUTION_VALUE);
-    float vwc;
+    data.voltage = sensorVoltage;
 
     // Calculate vwc
+    float vwc;
     if(sensorVoltage <= 1.1)
     {
       vwc = 10 * sensorVoltage - 1;
@@ -32,10 +34,11 @@ namespace vegetronix
     {
       vwc = 26.32 * sensorVoltage - 7.89;
     }
-    return (vwc);
+
+    data.value = vwc;
   }
 
-  void Vegetronix_VH400::readSensorWithStats(vegetronix_vh400_data_t &data)
+  void Vegetronix_VH400::readSensorWithStats(vegetronix_sensor_data_t &data)
   {
     // Sums for calculating statistics
     uint32_t sensorDNsum = 0;
@@ -91,7 +94,7 @@ namespace vegetronix
       sqDevSum_volts += pow((volts_mean - float(sensorVoltages_[i])), 2);
       sqDevSum_VWC += pow((VWC_mean - float(sensorVWCs_[i])), 2);
     }
-    
+
     float DN_stDev = sqrt(sqDevSum_DN / float(NUMBER_OF_MEASUREMENTS));
     float volts_stDev = sqrt(sqDevSum_volts / float(NUMBER_OF_MEASUREMENTS));
     float VWC_stDev = sqrt(sqDevSum_VWC / float(NUMBER_OF_MEASUREMENTS));
@@ -101,7 +104,7 @@ namespace vegetronix
     data.analogValue_sd = DN_stDev;
     data.voltage = volts_mean;
     data.voltage_sd = volts_stDev;
-    data.vwc = VWC_mean;
-    data.vwc_sd = VWC_stDev;
+    data.value = VWC_mean;
+    data.value_sd = VWC_stDev;
   }
 }

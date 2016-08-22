@@ -1,23 +1,22 @@
 #include "Vegetronix_THERM200.h"
 
-namespace vegetronix
+namespace vegetronix_sensor
 {
-  Vegetronix_THERM200::Vegetronix_THERM200(uint8_t pin, uint8_t res) :
-    pin_(pin), res_(res)
+  Vegetronix_THERM200::Vegetronix_THERM200(uint8_t pin) :
+    VegetronixSensor(), pin_(pin)
   {
     pinMode(pin_, INPUT);
-    analogReadResolution(res_);
   }
 
-  float Vegetronix_THERM200::readSensor()
+  void Vegetronix_THERM200::readSensor(vegetronix_sensor_data_t &data)
   {
-    uint16_t value = analogRead(pin_);
-    float sensorVoltage = value * (REF_VOLTAGE / ADC_RESOLUTION_VALUE);
+    data.analogValue = analogRead(pin_) * 1.0;
+    data.voltage = data.analogValue * (REF_VOLTAGE / ADC_RESOLUTION_VALUE);
 
-    return ((sensorVoltage * 41.67) - 40.0);
+    data.value = (data.voltage * 41.67) - 40.0;
   }
 
-  void Vegetronix_THERM200::readSensorWithStats(vegetronix_therm200_data_t &data)
+  void Vegetronix_THERM200::readSensorWithStats(vegetronix_sensor_data_t &data)
   {
     // Sums for calculating statistics
     uint32_t sensorDNsum = 0;
@@ -73,7 +72,7 @@ namespace vegetronix
     data.analogValue_sd = DN_stDev;
     data.voltage = volts_mean;
     data.voltage_sd = volts_stDev;
-    data.temp = temp_mean;
-    data.temp_sd = temp_stDev;
+    data.value = temp_mean;
+    data.value_sd = temp_stDev;
   }
 }

@@ -96,16 +96,14 @@ mavlink_soil_volumetric_water_content_t msg_soil_vwc;
 //************ Instantiate interfaces for the various pieces of hardware *****
 //****************************************************************************
 RFM69 radio = RFM69(RFM69_CS, RFM69_IRQ, IS_RFM69HCW, RFM69_IRQN);
+DHT_Unified dht(DHTPIN, DHTTYPE);
+vegetronix_sensor::Vegetronix_VH400 vh400(A0);
+vegetronix_sensor::Vegetronix_THERM200 therm200(A1);
 
 // The address will be different depending on whether you leave
 // the ADDR pin float (addr 0x39), or tie it to ground or vcc. In those cases
 // use TSL2561_ADDR_LOW (0x29) or TSL2561_ADDR_HIGH (0x49) respectively
 Adafruit_TSL2561_Unified tsl = Adafruit_TSL2561_Unified(TSL2561_ADDR_FLOAT, 12345);
-
-DHT_Unified dht(DHTPIN, DHTTYPE);
-
-vegetronix::Vegetronix_VH400 vh400(A0);
-vegetronix::Vegetronix_THERM200 therm200(A1);
 //****************************************************************************
 
 //****************************************************************************

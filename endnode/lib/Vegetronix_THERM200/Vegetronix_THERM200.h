@@ -7,40 +7,20 @@
 #ifndef VEGETRONIX_THERM200_H
 #define VEGETRONIX_THERM200_H
 
-#include <Arduino.h>
+#include <Vegetronix_Sensor.h>
 
-#if defined(ARDUINO_ARCH_SAM) || defined(ARDUINO_ARCH_SAMD)
-#define REF_VOLTAGE          3.3
-#define ADC_RESOLUTION_VALUE 4095
-#else
-#define REF_VOLTAGE          5.0
-#define ADC_RESOLUTION_VALUE 1023
-#endif
-
-#define NUMBER_OF_MEASUREMENTS 100
-#define DELAY_BETWEEN_MEASUREMENTS 1
-
-namespace vegetronix
+namespace vegetronix_sensor
 {
-  typedef struct vegetronix_therm200_data {
-    float analogValue;
-    float analogValue_sd;
-    float voltage;
-    float voltage_sd;
-    float temp;
-    float temp_sd;
-  } vegetronix_therm200_data_t;
-
-  class Vegetronix_THERM200
+  class Vegetronix_THERM200 : public VegetronixSensor
   {
   public:
-    Vegetronix_THERM200(uint8_t pin, uint8_t res = ADC_RESOLUTION);
+    Vegetronix_THERM200(uint8_t pin);
 
     // This function returns soil temperature by converting the analogPin
     // value to voltage and then converting voltage to the linear temperature
     // reading degrees Celcius. Datasheet provided at
     // https://www.vegetronix.com/Products/THERM200
-    float readSensor(void);
+    void readSensor(vegetronix_sensor_data_t& data);
 
     // This variant calculates the mean and standard deviation of 100
     // measurements. It reports mean and standard deviation for the analog value,
@@ -48,11 +28,10 @@ namespace vegetronix
     // converting the pin value to voltage and then converting voltage to the
     // linear soil temperature reading in degress Celcius. Datasheet provided
     // at https://www.vegetronix.com/Products/THERM200
-    void readSensorWithStats(vegetronix_therm200_data_t& data);
+    void readSensorWithStats(vegetronix_sensor_data_t& data);
 
   private:
     uint8_t pin_;
-    uint8_t res_;
 
     // Arrays to hold multiple measurements
     uint32_t sensorDNs_[NUMBER_OF_MEASUREMENTS];
