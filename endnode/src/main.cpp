@@ -18,8 +18,11 @@
   #define Serial SERIAL_PORT_USBVIRTUAL
 #endif
 
+// Vegetronix Sensors
+#include <Vegetronix_Sensor.h>
 #include <Vegetronix_VH400.h>
 #include <Vegetronix_THERM200.h>
+#include <Vegetronix_VGHUMID.h>
 
 // RFM69 Transiever Interface
 #include <RFM69.h>
@@ -99,6 +102,8 @@ RFM69 radio = RFM69(RFM69_CS, RFM69_IRQ, IS_RFM69HCW, RFM69_IRQN);
 DHT_Unified dht(DHTPIN, DHTTYPE);
 vegetronix_sensor::Vegetronix_VH400 vh400(A0);
 vegetronix_sensor::Vegetronix_THERM200 therm200(A1);
+vegetronix_sensor::Vegetronix_VGHUMID vghumid(A2);
+
 
 // The address will be different depending on whether you leave
 // the ADDR pin float (addr 0x39), or tie it to ground or vcc. In those cases

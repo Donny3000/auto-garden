@@ -11,7 +11,7 @@
 
 namespace vegetronix_sensor
 {
-  class Vegetronix_VH400 : public VegetronixSensor
+  class Vegetronix_VH400 : public Vegetronix_Sensor
   {
   public:
     Vegetronix_VH400(uint8_t pin);
@@ -25,15 +25,10 @@ namespace vegetronix_sensor
     // This variant calculates the mean and standard deviation of 100 measurements
     // over 5 seconds.
     // It reports mean and standard deviation for the analog value, voltage,
-    // and WVC. This function returns Volumetric Water Content by converting the
-    // pin value to voltage and then converting voltage to VWC using the piecewise
-    // regressions provided by the manufacturer
-    // at http://www.vegetronix.com/Products/VH400/VH400-Piecewise-Curve.phtml
+    // and WVC.
     void readSensorWithStats(vegetronix_sensor_data_t& data);
 
   private:
-    uint8_t pin_;
-
     // Arrays to hold multiple measurements
     uint32_t sensorDNs_[NUMBER_OF_MEASUREMENTS];
     float sensorVoltages_[NUMBER_OF_MEASUREMENTS];

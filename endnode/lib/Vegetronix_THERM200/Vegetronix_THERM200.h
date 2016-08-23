@@ -11,7 +11,7 @@
 
 namespace vegetronix_sensor
 {
-  class Vegetronix_THERM200 : public VegetronixSensor
+  class Vegetronix_THERM200 : public Vegetronix_Sensor
   {
   public:
     Vegetronix_THERM200(uint8_t pin);
@@ -24,15 +24,10 @@ namespace vegetronix_sensor
 
     // This variant calculates the mean and standard deviation of 100
     // measurements. It reports mean and standard deviation for the analog value,
-    // voltage, and WVC. This function returns the soil temperature by
-    // converting the pin value to voltage and then converting voltage to the
-    // linear soil temperature reading in degress Celcius. Datasheet provided
-    // at https://www.vegetronix.com/Products/THERM200
+    // voltage, and soil temperature.
     void readSensorWithStats(vegetronix_sensor_data_t& data);
 
   private:
-    uint8_t pin_;
-
     // Arrays to hold multiple measurements
     uint32_t sensorDNs_[NUMBER_OF_MEASUREMENTS];
     float sensorVoltages_[NUMBER_OF_MEASUREMENTS];

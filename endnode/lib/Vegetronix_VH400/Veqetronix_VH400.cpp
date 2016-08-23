@@ -3,39 +3,33 @@
 namespace vegetronix_sensor
 {
   Vegetronix_VH400::Vegetronix_VH400(uint8_t pin) :
-  VegetronixSensor(), pin_(pin)
+    Vegetronix_Sensor(pin)
   {
-    pinMode(pin_, INPUT);
   }
 
   void Vegetronix_VH400::readSensor(vegetronix_sensor_data_t& data)
   {
-    uint16_t value = analogRead(pin_);
-    data.analogValue = value * 1.0;
-
-    float sensorVoltage = value * (REF_VOLTAGE / ADC_RESOLUTION_VALUE);
-    data.voltage = sensorVoltage;
+    data.analogValue = analogRead(pin_) * 1.0;
+    data.voltage = data.analogValue * (REF_VOLTAGE / ADC_RESOLUTION_VALUE);
 
     // Calculate vwc
-    float vwc;
-    if(sensorVoltage <= 1.1)
+    if(data.voltage <= 1.1)
     {
-      vwc = 10 * sensorVoltage - 1;
+      data.value = 10 * data.voltage - 1;
     }
-    else if(sensorVoltage > 1.1 && sensorVoltage <= 1.3)
+    else if(data.voltage > 1.1 && data.voltage <= 1.3)
     {
-      vwc = 25 * sensorVoltage - 17.5;
+      data.value = 25 * data.voltage - 17.5;
     }
-    else if(sensorVoltage > 1.3 && sensorVoltage <= 1.82)
+    else if(data.voltage > 1.3 && data.voltage <= 1.82)
     {
-      vwc = 48.08 * sensorVoltage - 47.5;
+      data.value = 48.08 * data.voltage - 47.5;
     }
-    else if(sensorVoltage > 1.82)
+    else if(data.voltage > 1.82)
     {
-      vwc = 26.32 * sensorVoltage - 7.89;
+      data.value = 26.32 * data.voltage - 7.89;
     }
 
-    data.value = vwc;
   }
 
   void Vegetronix_VH400::readSensorWithStats(vegetronix_sensor_data_t &data)
@@ -58,13 +52,20 @@ namespace vegetronix_sensor
       sensorVoltage = sensorDN * (REF_VOLTAGE / ADC_RESOLUTION_VALUE);
 
       // Calculate VWC
-      if(sensorVoltage <= 1.1) {
+      if(sensorVoltage <= 1.1)
+      {
         vwc = 10 * sensorVoltage - 1;
-      } else if(sensorVoltage > 1.1 && sensorVoltage <= 1.3) {
+      }
+      else if(sensorVoltage > 1.1 && sensorVoltage <= 1.3)
+      {
         vwc = 25 * sensorVoltage - 17.5;
-      } else if(sensorVoltage > 1.3 && sensorVoltage <= 1.82) {
+      }
+      else if(sensorVoltage > 1.3 && sensorVoltage <= 1.82)
+      {
         vwc = 48.08 * sensorVoltage - 47.5;
-      } else if(sensorVoltage > 1.82) {
+      }
+      else if(sensorVoltage > 1.82)
+      {
         vwc = 26.32 * sensorVoltage - 7.89;
       }
 

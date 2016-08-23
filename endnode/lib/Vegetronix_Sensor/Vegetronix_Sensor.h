@@ -31,11 +31,11 @@ namespace vegetronix_sensor
     float value_sd;
   } vegetronix_sensor_data_t;
 
-  class VegetronixSensor
+  class Vegetronix_Sensor
   {
   public:
-    VegetronixSensor() {};
-    virtual ~VegetronixSensor() {};
+    Vegetronix_Sensor(const uint8_t analogPin) : pin_(analogPin) { pinMode(pin_, INPUT_PULLUP); }
+    virtual ~Vegetronix_Sensor() {};
 
 
     // This method must be defined in the subclass
@@ -51,6 +51,9 @@ namespace vegetronix_sensor
     // https://gist.github.com/lx-88/413b48ced6b79300ea76
     // I decieded to do a similar thing here.
     virtual void readSensorWithStats(vegetronix_sensor_data_t& data) {};
+
+  protected:
+    uint8_t pin_;
   };
 }
 

@@ -3,9 +3,8 @@
 namespace vegetronix_sensor
 {
   Vegetronix_THERM200::Vegetronix_THERM200(uint8_t pin) :
-    VegetronixSensor(), pin_(pin)
+    Vegetronix_Sensor(pin)
   {
-    pinMode(pin_, INPUT);
   }
 
   void Vegetronix_THERM200::readSensor(vegetronix_sensor_data_t &data)
