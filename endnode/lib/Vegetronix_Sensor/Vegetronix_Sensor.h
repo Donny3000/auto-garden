@@ -34,7 +34,7 @@ namespace vegetronix_sensor
   class Vegetronix_Sensor
   {
   public:
-    Vegetronix_Sensor(const uint8_t analogPin) : pin_(analogPin) { pinMode(pin_, INPUT_PULLUP); }
+    Vegetronix_Sensor(const uint8_t analogPin) : pin_(analogPin) {}
     virtual ~Vegetronix_Sensor() {};
 
 
